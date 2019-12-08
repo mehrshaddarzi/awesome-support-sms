@@ -71,8 +71,8 @@ class AW_SMS {
 	public static $providers = array(
 		'admin\Settings',
 		'admin\Admin',
-		'Front',
-		'Ajax',
+		//'Front',
+		//'Ajax',
 		'core\\Utility'
 	);
 
