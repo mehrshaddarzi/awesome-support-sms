@@ -109,11 +109,11 @@ class Admin {
 
 
 			// Check Sms To
-			$sms->to = array();
+			$mobile_numbers = array();
 
 			// Check Administrator
 			if ( $options['send_to_admin'] == 1 and ! empty( $options['modir_mobile'] ) ) {
-				$sms->to[] = $options['modir_mobile'];
+				$mobile_numbers[] = $options['modir_mobile'];
 			}
 
 			// Check Sender
@@ -122,7 +122,7 @@ class Admin {
 				// Check User has Mobile
 				$mobile_number = get_user_meta( $post->post_author, $options['user_meta_modir'], true );
 				if ( ! empty( $mobile_number ) ) {
-					$sms->to[] = $mobile_number;
+					$mobile_numbers[] = $mobile_number;
 				}
 			}
 
@@ -133,14 +133,17 @@ class Admin {
 				if ( isset( $_POST['wpas_assignee'] ) and ! empty( $_POST['wpas_assignee'] ) ) {
 					$mobile_number = get_user_meta( $_POST['wpas_assignee'], $options['user_meta_modir'], true );
 					if ( ! empty( $mobile_number ) ) {
-						$sms->to[] = $mobile_number;
+						$mobile_numbers[] = $mobile_number;
 					}
 				}
 			}
 
 			// Send SMS
-			$sms->msg = $sms_text;
-			$sms->SendSMS();
+			if ( ! empty( $mobile_numbers ) ) {
+				$sms->to  = $mobile_numbers;
+				$sms->msg = $sms_text;
+				$sms->SendSMS();
+			}
 
 			# And update the meta so it won't run again
 			update_post_meta( $post_ID, 'check_if_run_once_send_sms', true );
@@ -198,13 +201,4 @@ class Admin {
 		//add_submenu_page( self::$admin_page_slug, __( 'order', 'aw-sms' ), __( 'order', 'aw-sms' ), 'manage_options', self::$admin_page_slug, array( $this, 'admin_page' ) );
 		//add_submenu_page( self::$admin_page_slug, __( 'setting', 'aw-sms' ), __( 'setting', 'aw-sms' ), 'manage_options', 'aw_sms_option', array( Settings::instance(), 'setting_page' ) );
 	}
-
-	/*
-	 * Admin Page
-	 */
-	public function admin_page() {
-		$simple_text = 'Hi';
-		require_once AW_SMS::$plugin_path . '/inc/admin/views/default.php';
-	}
-
 }

@@ -57,6 +57,8 @@ class Settings {
 	 * Registers settings section and fields
 	 */
 	public function init_option() {
+		global $wpdb;
+
 		$sections = array(
 			array(
 				'id'    => 'aw_sms_opt',
@@ -124,7 +126,7 @@ class Settings {
 					'name'    => 'user_meta_modir',
 					'label'   => __( 'متا موبایل کابران در سایت', 'wp-reviews-insurance' ),
 					'type'    => 'text',
-					'default' => 'sd_wpas_mobile_phone'
+					'default' => $wpdb->prefix . 'wpas_mobile_phone'
 				),
 				array(
 					'name'    => 'text_sms',

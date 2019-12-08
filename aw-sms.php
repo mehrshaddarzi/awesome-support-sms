@@ -69,8 +69,8 @@ class AW_SMS {
 	| The service providers listed here will be automatically loaded on the request to your Plugin.
 	*/
 	public static $providers = array(
-		'admin\Settings',
-		'admin\Admin',
+		//'admin\Settings',
+		//'admin\Admin',
 		//'Front',
 		//'Ajax',
 		//'core\\Utility'
@@ -205,15 +205,15 @@ class AW_SMS {
 		/*
 		 * autoload plugin files
 		 */
-		include_once dirname( __FILE__ ) . '/vendor/autoload.php';
+		include_once dirname( __FILE__ ) . '/inc/core/settingapi.php';
+		include_once dirname( __FILE__ ) . '/inc/admin/admin.php';
+		include_once dirname( __FILE__ ) . '/inc/admin/settings.php';
 
 		/*
 		 * Load List Of classes
 		 */
-		foreach ( self::$providers as $class ) {
-			$class_object = '\AW_SMS\\' . $class;
-			new $class_object;
-		}
+		new AW_SMS\admin\Settings();
+		new AW_SMS\admin\Admin();
 
 	}
 
@@ -223,31 +223,7 @@ class AW_SMS {
 	 * @wp-hook init Hook
 	 * @return  void
 	 */
-	public function init_hooks() {
-
-		/*
-		 * Activation Plugin Hook
-		 */
-		register_activation_hook( __FILE__, array( '\AW_SMS\config\install', 'run_install' ) );
-
-		/*
-		 * Uninstall Plugin Hook
-		 */
-		register_deactivation_hook( __FILE__, array( '\AW_SMS\config\uninstall', 'run_uninstall' ) );
-
-		/*
-		 * Load i18n
-		 */
-		if ( self::$use_i18n === true ) {
-			new \AW_SMS\config\i18n( 'aw-sms' );
-		}
-
-		//Check $ENVIRONMENT Mode
-		if ( self::$ENVIRONMENT == "development" ) {
-			new \AW_SMS\core\debug();
-		}
-
-	}
+	public function init_hooks() {}
 
 	/**
 	 * Show notice about PHP version
@@ -274,9 +250,9 @@ class AW_SMS {
  *
  * @since  1.1.0
  */
-function wp_plugin() {
+function aw_sms_plugin() {
 	return AW_SMS::instance();
 }
 
 // Global for backwards compatibility.
-$GLOBALS['aw-sms'] = wp_plugin();
+$GLOBALS['aw-sms'] = aw_sms_plugin();
