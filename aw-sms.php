@@ -73,7 +73,7 @@ class AW_SMS {
 		'admin\Admin',
 		//'Front',
 		//'Ajax',
-		'core\\Utility'
+		//'core\\Utility'
 	);
 
 	/**
