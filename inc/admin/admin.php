@@ -31,6 +31,83 @@ class Admin {
 		 * Add SMS after Create Post Type
 		 */
 		add_action( 'save_post', array( $this, 'sms_send' ), 10, 3 );
+		/**
+		 * Fix Bug Property in Awesome Support
+		 */
+		add_action( 'admin_footer-post.php', array( $this, 'fix_select_bug' ) );
+	}
+
+	public function fix_select_bug() {
+		global $typenow, $post;
+		if ( self::is_edit_page( 'edit' ) and "ticket" == $typenow ) {
+
+			// Get Post Data
+			$post_data     = get_post( $post->ID, ARRAY_A );
+			$post_meta     = array_map( function ( $a ) {
+				return $a[0];
+			}, get_post_meta( $post->ID ) );
+			$post_taxonomy = get_post_taxonomies( $post->ID );
+			$term_list     = array();
+			foreach ( $post_taxonomy as $tax ) {
+				$post_term_list    = wp_get_post_terms( $post->ID, $tax );
+				$term_list[ $tax ] = $post_term_list;
+			}
+
+			?>
+            <script>
+                jQuery(document).ready(function ($) {
+
+					<?php
+					if(isset( $term_list['product'][0] )) {
+					?>
+                    $("#wpas_product").val("<?php echo $term_list['product'][0]->term_id; ?>");
+					<?php
+					}
+					?>
+
+					<?php
+					if(isset( $term_list['ticket_priority'][0] )) {
+					?>
+                    $("#wpas_ticket_priority").val("<?php echo $term_list['ticket_priority'][0]->term_id; ?>");
+					<?php
+					}
+					?>
+
+					<?php
+					if(isset( $term_list['ticket_channel'][0] )) {
+					?>
+                    $("#wpas_ticket_channel").val("<?php echo $term_list['ticket_channel'][0]->term_id; ?>");
+					<?php
+					}
+					?>
+                });
+            </script>
+			<?php
+		}
+	}
+
+	/**
+	 * @see https://wordpress.stackexchange.com/questions/50043/how-to-determine-whether-we-are-in-add-new-page-post-cpt-or-in-edit-page-post-cp
+	 * @param null $new_edit
+	 * @return bool
+	 */
+	public static function is_edit_page( $new_edit = null ) {
+		global $pagenow;
+
+		//make sure we are on the backend
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		if ( $new_edit == "edit" ) {
+			return in_array( $pagenow, array( 'post.php', ) );
+		} elseif ( $new_edit == "new" ) //check for new post page
+		{
+			return in_array( $pagenow, array( 'post-new.php' ) );
+		} else //check for either new or edit
+		{
+			return in_array( $pagenow, array( 'post.php', 'post-new.php' ) );
+		}
 	}
 
 	function sms_send( $post_ID, $post, $update ) {
@@ -158,7 +235,10 @@ class Admin {
 	 * @param array $args
 	 * @return string
 	 */
-	public static function admin_link( $page, $args = array() ) {
+	public
+	static function admin_link(
+		$page, $args = array()
+	) {
 		return add_query_arg( $args, admin_url( 'admin.php?page=' . $page ) );
 	}
 
@@ -168,7 +248,10 @@ class Admin {
 	 * @param $page_slug
 	 * @return bool
 	 */
-	public static function in_page( $page_slug ) {
+	public
+	static function in_page(
+		$page_slug
+	) {
 		global $pagenow;
 		if ( $pagenow == "admin.php" and isset( $_GET['page'] ) and $_GET['page'] == $page_slug ) {
 			return true;
@@ -180,7 +263,8 @@ class Admin {
 	/**
 	 * Load assets file in admin
 	 */
-	public function admin_assets() {
+	public
+	function admin_assets() {
 		global $pagenow;
 
 		//List Allow This Script
@@ -196,7 +280,8 @@ class Admin {
 	/**
 	 * Set Admin Menu
 	 */
-	public function admin_menu() {
+	public
+	function admin_menu() {
 		add_menu_page( __( 'پیامک تیکت', 'aw-sms' ), __( 'پیامک تیکت', 'aw-sms' ), 'manage_options', self::$admin_page_slug, array( Settings::instance(), 'setting_page' ), 'dashicons-email', 10 );
 		//add_submenu_page( self::$admin_page_slug, __( 'order', 'aw-sms' ), __( 'order', 'aw-sms' ), 'manage_options', self::$admin_page_slug, array( $this, 'admin_page' ) );
 		//add_submenu_page( self::$admin_page_slug, __( 'setting', 'aw-sms' ), __( 'setting', 'aw-sms' ), 'manage_options', 'aw_sms_option', array( Settings::instance(), 'setting_page' ) );
