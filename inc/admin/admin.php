@@ -118,10 +118,11 @@ class Admin {
 			return;
 		}
 
-		if ( $post->post_type == 'ticket' && $post->post_status == 'processing' and ! get_post_meta( $post_ID, 'check_if_run_once_send_sms', true ) and isset( $_POST['wpas_ticket_priority'] ) ) {
+		// Option
+		$options = get_option( 'aw_sms_opt' );
 
-			// Option
-			$options = get_option( 'aw_sms_opt' );
+		// Send First in Creating Ticket
+		if ( $post->post_type == 'ticket' && $post->post_status == 'processing' and ! get_post_meta( $post_ID, 'check_if_run_once_send_sms', true ) and isset( $_POST['wpas_ticket_priority'] ) ) {
 
 			// Get Sender name
 			$sender_name = '';
@@ -226,6 +227,118 @@ class Admin {
 			update_post_meta( $post_ID, 'check_if_run_once_send_sms', true );
 		}
 
+		// Send For Add Reply
+		if ( $post->post_type == 'ticket_reply' && $post->post_status == 'read' and isset( $_POST['wpas_ticket_priority'] ) and isset( $_POST['user_ID'] ) and ! empty( $_POST['user_ID'] ) ) {
+
+			// Get Sender name
+			$sender_name = '';
+			$sender_user = get_userdata( $_POST['user_ID'] );
+			if ( ! empty( $sender_user ) ) {
+				$sender_name = $sender_user->first_name . ' ' . $sender_user->last_name;
+			}
+
+			// Get Receiver Name
+			$user_receiver_id = 0;
+			if ( $_POST['post_author'] != $_POST['user_ID'] ) {
+				$user_receiver_id = $_POST['post_author'];
+			} else {
+				if ( $_POST['wpas_assignee'] != $_POST['user_ID'] ) {
+					$user_receiver_id = $_POST['wpas_assignee'];
+				}
+			}
+			if ( $user_receiver_id > 0 ) {
+				$receiver_name = '';
+				if ( isset( $_POST['wpas_assignee'] ) and ! empty( $_POST['wpas_assignee'] ) ) {
+					$_user = get_userdata( $_POST['wpas_assignee'] );
+					if ( ! empty( $_user ) ) {
+						$receiver_name = $_user->first_name . ' ' . $_user->last_name;
+					}
+				}
+			}
+
+			// Get Property name
+			$property = '';
+			if ( isset( $_POST['wpas_ticket_priority'] ) and ! empty( $_POST['wpas_ticket_priority'] ) ) {
+				$_term    = get_term( $_POST['wpas_ticket_priority'] );
+				$property = $_term->name;
+			}
+
+			// Get Department Name
+			$department = '';
+			if ( isset( $_POST['wpas_department'] ) and ! empty( $_POST['wpas_department'] ) ) {
+				$_term      = get_term( $_POST['wpas_department'] );
+				$department = $_term->name;
+			}
+
+			// Get Id
+			$id = $post->ID;
+			if ( isset( $_POST['ticket_id'] ) and ! empty( $_POST['ticket_id'] ) ) {
+				$id = $_POST['ticket_id'];
+			}
+
+			// Convert SMS Text
+			$sms_text = str_ireplace(
+				array(
+					'[id]',
+					'[title]',
+					'[sender_name]',
+					'[receiver_name]',
+					'[property]',
+					'[department]',
+					'[date]',
+					PHP_EOL
+				),
+				array(
+					$id,
+					$post->post_title,
+					$sender_name,
+					$receiver_name,
+					$property,
+					$department,
+					date_i18n( "Y-m-d H:i", strtotime( $post->post_date ) ),
+					"\n"
+				),
+				$options['text_sms_reply']
+			);
+
+
+			// Check Sms To
+			$mobile_numbers = array();
+
+			// Check Administrator
+			if ( $options['send_to_admin_reply'] == 1 and ! empty( $options['modir_mobile'] ) ) {
+				$mobile_numbers[] = $options['modir_mobile'];
+			}
+
+			// Check Sender
+			if ( $options['send_to_sender'] == 1 ) {
+
+				// Check User has Mobile
+				$mobile_number = get_user_meta( $post->post_author, $options['user_meta_modir'], true );
+				if ( ! empty( $mobile_number ) ) {
+					$mobile_numbers[] = $mobile_number;
+				}
+			}
+
+			// Check Receiver
+			if ( $options['send_to_receiver'] == 1 ) {
+
+				// Check User has Mobile
+				if ( isset( $_POST['wpas_assignee'] ) and ! empty( $_POST['wpas_assignee'] ) ) {
+					$mobile_number = get_user_meta( $_POST['wpas_assignee'], $options['user_meta_modir'], true );
+					if ( ! empty( $mobile_number ) ) {
+						$mobile_numbers[] = $mobile_number;
+					}
+				}
+			}
+
+			// Send SMS
+			if ( ! empty( $mobile_numbers ) ) {
+				$sms->to  = $mobile_numbers;
+				$sms->msg = $sms_text;
+				$sms->SendSMS();
+			}
+		}
 	}
 
 	/**
@@ -235,10 +348,7 @@ class Admin {
 	 * @param array $args
 	 * @return string
 	 */
-	public
-	static function admin_link(
-		$page, $args = array()
-	) {
+	public static function admin_link( $page, $args = array() ) {
 		return add_query_arg( $args, admin_url( 'admin.php?page=' . $page ) );
 	}
 
@@ -248,10 +358,7 @@ class Admin {
 	 * @param $page_slug
 	 * @return bool
 	 */
-	public
-	static function in_page(
-		$page_slug
-	) {
+	public static function in_page( $page_slug ) {
 		global $pagenow;
 		if ( $pagenow == "admin.php" and isset( $_GET['page'] ) and $_GET['page'] == $page_slug ) {
 			return true;
@@ -263,8 +370,7 @@ class Admin {
 	/**
 	 * Load assets file in admin
 	 */
-	public
-	function admin_assets() {
+	public function admin_assets() {
 		global $pagenow;
 
 		//List Allow This Script
@@ -280,8 +386,7 @@ class Admin {
 	/**
 	 * Set Admin Menu
 	 */
-	public
-	function admin_menu() {
+	public function admin_menu() {
 		add_menu_page( __( 'پیامک تیکت', 'aw-sms' ), __( 'پیامک تیکت', 'aw-sms' ), 'manage_options', self::$admin_page_slug, array( Settings::instance(), 'setting_page' ), 'dashicons-email', 10 );
 		//add_submenu_page( self::$admin_page_slug, __( 'order', 'aw-sms' ), __( 'order', 'aw-sms' ), 'manage_options', self::$admin_page_slug, array( $this, 'admin_page' ) );
 		//add_submenu_page( self::$admin_page_slug, __( 'setting', 'aw-sms' ), __( 'setting', 'aw-sms' ), 'manage_options', 'aw_sms_option', array( Settings::instance(), 'setting_page' ) );

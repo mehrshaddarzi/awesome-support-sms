@@ -96,6 +96,15 @@ class Settings {
 					)
 				),
 				array(
+					'name'    => 'send_to_admin_reply',
+					'label'   => __( 'اعلان پاسخ تیکت ها به مدیر', 'wp-reviews-insurance' ),
+					'type'    => 'select',
+					'options' => array(
+						'0' => 'خیر',
+						'1' => 'آری'
+					)
+				),
+				array(
 					'name'    => 'modir_mobile',
 					'label'   => __( 'شماره همراه مدیر', 'wp-reviews-insurance' ),
 					'type'    => 'text',
@@ -133,6 +142,13 @@ class Settings {
 					'label'   => __( 'متن پیامک', 'wp-reviews-insurance' ),
 					'type'    => 'textarea',
 					'default' => 'تیکت [id] با عنوان [title] توسط [sender_name] برای [receiver_name] در تاریخ [date] با فوریت [property] ارسال گردید.',
+					'desc'    => $help_text,
+				),
+				array(
+					'name'    => 'text_sms_reply',
+					'label'   => __( 'متن پیامک پاسخ', 'wp-reviews-insurance' ),
+					'type'    => 'textarea',
+					'default' => 'یک پاسخ برای تیکت [id] با عنوان [title] توسط [sender_name] در تاریخ [date] ایجاد شد.',
 					'desc'    => $help_text,
 				)
 			)
